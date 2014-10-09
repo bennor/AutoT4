@@ -1,3 +1,7 @@
-﻿Version 1.0.0
+﻿Version 1.0.1
+=============
+Added Visual Studio 2013 support
+
+Version 1.0.0
 =============
 Initial version
