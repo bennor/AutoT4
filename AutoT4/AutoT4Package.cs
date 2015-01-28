@@ -42,9 +42,12 @@ namespace BennorMcCarthy.AutoT4
             var templates = FindProjectItems(@"\.[Tt][Tt]$", projects).ToList();
             foreach (var template in templates)
             {
-                if (!template.IsOpen)
-                    template.Open();
-                template.Save();
+                if (template.Properties.Item("ItemType").Value.ToString() == "None")
+                {
+                    if (!template.IsOpen)
+                        template.Open();
+                    template.Save();
+                }
             }
         }
 
