@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ComponentModel.Design;
 using Microsoft.Win32;
@@ -12,6 +13,7 @@ using EnvDTE;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using VSLangProj;
 
 namespace BennorMcCarthy.AutoT4
 {
@@ -21,17 +23,42 @@ namespace BennorMcCarthy.AutoT4
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
     public sealed class AutoT4Package : Package
     {
-        private DTE dte;
-        private BuildEvents buildEvents;
+        private DTE _dte;
+        private BuildEvents _buildEvents;
+        private ObjectExtenders _objectExtenders;
+        private AutoT4ExtenderProvider _extenderProvider;
+        private readonly List<int> _extenderProviderCookies = new List<int>();
 
         protected override void Initialize()
         {
             base.Initialize();
 
-            dte = GetService(typeof(SDTE)) as DTE;
+            _dte = GetService(typeof(SDTE)) as DTE;
+            if (_dte == null)
+                return;
 
-            buildEvents = dte.Events.BuildEvents;
-            buildEvents.OnBuildBegin += OnBuildBegin;
+            RegisterExtenderProvider(VSConstants.CATID.CSharpFileProperties_string);
+            RegisterExtenderProvider(VSConstants.CATID.VBFileProperties_string);
+
+            RegisterEvents();
+        }
+
+        private void RegisterEvents()
+        {
+            _buildEvents = _dte.Events.BuildEvents;
+            _buildEvents.OnBuildBegin += OnBuildBegin;
+        }
+
+        private void RegisterExtenderProvider(string catId)
+        {
+            const string name = AutoT4ExtenderProvider.Name;
+
+            _objectExtenders = _objectExtenders ?? GetService(typeof(ObjectExtenders)) as ObjectExtenders;
+            if (_objectExtenders == null)
+                return;
+
+            _extenderProvider = _extenderProvider ?? new AutoT4ExtenderProvider(_dte);
+            _extenderProviderCookies.Add(_objectExtenders.RegisterExtenderProvider(catId, name, _extenderProvider));
         }
 
         private void RunTemplates(params Project[] projects)
@@ -41,6 +68,20 @@ namespace BennorMcCarthy.AutoT4
 
             var templates = FindProjectItems(@"\.[Tt][Tt]$", projects).ToList();
             foreach (var template in templates)
+            {
+                if(new AutoT4ProjectItemSettings(template).RunOnBuild)
+                    RunTemplate(template);
+            }
+        }
+
+        private void RunTemplate(ProjectItem template)
+        {
+            var templateVsProjectItem = template.Object as VSProjectItem;
+            if (templateVsProjectItem != null)
+            {
+                templateVsProjectItem.RunCustomTool();
+            }
+            else
             {
                 if (!template.IsOpen)
                     template.Open();
@@ -54,10 +95,10 @@ namespace BennorMcCarthy.AutoT4
             switch (Scope)
             {
                 case vsBuildScope.vsBuildScopeSolution:
-                    projects = dte.Solution.Projects.OfType<Project>();
+                    projects = _dte.Solution.Projects.OfType<Project>();
                     break;
                 case vsBuildScope.vsBuildScopeProject:
-                    projects = ((object[])dte.ActiveSolutionProjects).OfType<Project>();
+                    projects = ((object[])_dte.ActiveSolutionProjects).OfType<Project>();
                     break;
                 default:
                     return;
@@ -69,7 +110,7 @@ namespace BennorMcCarthy.AutoT4
         private IEnumerable<ProjectItem> FindProjectItems(string pattern, IEnumerable<Project> projects)
         {
             if (projects == null)
-                projects = dte.Solution.Projects.OfType<Project>();
+                projects = _dte.Solution.Projects.OfType<Project>();
 
             var regex = new Regex(pattern);
             foreach (Project project in projects)
@@ -105,10 +146,10 @@ namespace BennorMcCarthy.AutoT4
             if (!canClose)
                 return result;
 
-            if (buildEvents != null)
+            if (_buildEvents != null)
             {
-                buildEvents.OnBuildBegin -= OnBuildBegin;
-                buildEvents = null;
+                _buildEvents.OnBuildBegin -= OnBuildBegin;
+                _buildEvents = null;
             }
             return result;
         }
