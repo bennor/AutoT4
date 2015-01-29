@@ -1,7 +1,12 @@
-﻿Version 1.0.1
+﻿Version 1.1.0
 =============
-Added Visual Studio 2013 support
+* Added ability to exclude templates from automatic build via Properties window
+* Added Visual Studio 2015 support
+
+Version 1.0.1
+=============
+* Added Visual Studio 2013 support
 
 Version 1.0.0
 =============
-Initial version
+* Initial version
