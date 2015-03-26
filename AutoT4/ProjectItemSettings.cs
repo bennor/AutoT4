@@ -55,7 +55,7 @@ namespace BennorMcCarthy.AutoT4
             _storage.SetItemAttribute(_itemId, Scope(name), serializedValue);
         }
 
-        protected T Get<T>(T defaultValue = default(T), [CallerMemberName] string name = null)
+        protected T Get<T>(T defaultValue = default(T), Func<string, T> coercionFunc = null, [CallerMemberName] string name = null)
         {
             if (name == null)
                 throw new ArgumentNullException("name");
@@ -69,17 +69,20 @@ namespace BennorMcCarthy.AutoT4
 
             if (string.IsNullOrWhiteSpace(serializedValue))
                 return defaultValue;
-            
+
             try
             {
-                if (typeof (T).IsEnum)
+                if (typeof(T).IsEnum)
                 {
-                    return (T) Enum.Parse(typeof (T), serializedValue);
+                    return (T)Enum.Parse(typeof(T), serializedValue);
                 }
-                return (T) Convert.ChangeType(serializedValue, typeof (T));
+                return (T)Convert.ChangeType(serializedValue, typeof(T));
             }
             catch
             {
+                if (coercionFunc != null)
+                    return coercionFunc(serializedValue);
+
                 return defaultValue;
             }
         }
