@@ -47,6 +47,7 @@ namespace BennorMcCarthy.AutoT4
         {
             _buildEvents = _dte.Events.BuildEvents;
             _buildEvents.OnBuildBegin += OnBuildBegin;
+            _buildEvents.OnBuildDone += OnBuildDone;
         }
 
         private void RegisterExtenderProvider(string catId)
@@ -61,83 +62,23 @@ namespace BennorMcCarthy.AutoT4
             _extenderProviderCookies.Add(_objectExtenders.RegisterExtenderProvider(catId, name, _extenderProvider));
         }
 
-        private void RunTemplates(params Project[] projects)
-        {
-            if (projects == null)
-                return;
-
-            var templates = FindProjectItems(@"\.[Tt][Tt]$", projects).ToList();
-            foreach (var template in templates)
-            {
-                if(new AutoT4ProjectItemSettings(template).RunOnBuild)
-                    RunTemplate(template);
-            }
-        }
-
-        private void RunTemplate(ProjectItem template)
-        {
-            var templateVsProjectItem = template.Object as VSProjectItem;
-            if (templateVsProjectItem != null)
-            {
-                templateVsProjectItem.RunCustomTool();
-            }
-            else
-            {
-                if (!template.IsOpen)
-                    template.Open();
-                template.Save();
-            }
-        }
-
         private void OnBuildBegin(vsBuildScope Scope, vsBuildAction Action)
         {
-            IEnumerable<Project> projects = null;
-            switch (Scope)
-            {
-                case vsBuildScope.vsBuildScopeSolution:
-                    projects = _dte.Solution.Projects.OfType<Project>();
-                    break;
-                case vsBuildScope.vsBuildScopeProject:
-                    projects = ((object[])_dte.ActiveSolutionProjects).OfType<Project>();
-                    break;
-                default:
-                    return;
-            }
-
-            RunTemplates(projects.ToArray());
+            RunTemplates(Scope, BuildEvent.BeforeBuild);
         }
 
-        private IEnumerable<ProjectItem> FindProjectItems(string pattern, IEnumerable<Project> projects)
+        private void OnBuildDone(vsBuildScope Scope, vsBuildAction Action)
         {
-            if (projects == null)
-                projects = _dte.Solution.Projects.OfType<Project>();
-
-            var regex = new Regex(pattern);
-            foreach (Project project in projects)
-            {
-                foreach (var projectItem in FindProjectItems(regex, project.ProjectItems))
-                    yield return projectItem;
-            }
+            RunTemplates(Scope, BuildEvent.AfterBuild);
         }
 
-        private static IEnumerable<ProjectItem> FindProjectItems(Regex regex, ProjectItems projectItems)
+        private void RunTemplates(vsBuildScope scope, BuildEvent buildEvent)
         {
-            foreach (ProjectItem projectItem in projectItems)
-            {
-                if (regex.IsMatch(projectItem.Name ?? ""))
-                    yield return projectItem;
-
-                if (projectItem.ProjectItems != null)
-                {
-                    foreach (var subItem in FindProjectItems(regex, projectItem.ProjectItems))
-                        yield return subItem;
-                }
-                if (projectItem.SubProject != null)
-                {
-                    foreach (var subItem in FindProjectItems(regex, projectItem.SubProject.ProjectItems))
-                        yield return subItem;
-                }
-            }
+            _dte.GetProjectsWithinBuildScope(scope)
+                .FindT4ProjectItems()
+                .ThatShouldRunOn(buildEvent)
+                .ToList()
+                .ForEach(item => item.RunTemplate());
         }
 
         protected override int QueryClose(out bool canClose)
@@ -149,6 +90,7 @@ namespace BennorMcCarthy.AutoT4
             if (_buildEvents != null)
             {
                 _buildEvents.OnBuildBegin -= OnBuildBegin;
+                _buildEvents.OnBuildDone -= OnBuildDone;
                 _buildEvents = null;
             }
             return result;

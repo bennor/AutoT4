@@ -22,10 +22,10 @@ namespace BennorMcCarthy.AutoT4
             if (item == null)
                 throw new ArgumentNullException("item");
 
-            if(!string.IsNullOrWhiteSpace(scope))
+            if (!string.IsNullOrWhiteSpace(scope))
                 _scope = scope.Trim();
 
-            var solution = (IVsSolution) Package.GetGlobalService(typeof (SVsSolution));
+            var solution = (IVsSolution)Package.GetGlobalService(typeof(SVsSolution));
 
             IVsHierarchy hierarchy;
             if (0 != solution.GetProjectOfUniqueName(item.ContainingProject.UniqueName, out hierarchy))
@@ -36,7 +36,7 @@ namespace BennorMcCarthy.AutoT4
                 return;
 
             var fullPath = item.FileNames[0];
-                
+
             if (0 != hierarchy.ParseCanonicalName(fullPath, out _itemId))
                 return;
 
@@ -55,7 +55,7 @@ namespace BennorMcCarthy.AutoT4
             _storage.SetItemAttribute(_itemId, Scope(name), serializedValue);
         }
 
-        protected T Get<T>(T defaultValue = default(T), [CallerMemberName] string name = null)
+        protected T Get<T>(T defaultValue = default(T), Func<string, T> coercionFunc = null, [CallerMemberName] string name = null)
         {
             if (name == null)
                 throw new ArgumentNullException("name");
@@ -67,9 +67,24 @@ namespace BennorMcCarthy.AutoT4
             if (0 != _storage.GetItemAttribute(_itemId, Scope(name), out serializedValue))
                 return defaultValue;
 
-            return !String.IsNullOrWhiteSpace(serializedValue)
-                       ? (T)Convert.ChangeType(serializedValue, typeof(T))
-                       : defaultValue;
+            if (string.IsNullOrWhiteSpace(serializedValue))
+                return defaultValue;
+
+            try
+            {
+                if (typeof(T).IsEnum)
+                {
+                    return (T)Enum.Parse(typeof(T), serializedValue);
+                }
+                return (T)Convert.ChangeType(serializedValue, typeof(T));
+            }
+            catch
+            {
+                if (coercionFunc != null)
+                    return coercionFunc(serializedValue);
+
+                return defaultValue;
+            }
         }
 
         private string Scope(string name)
