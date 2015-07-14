@@ -10,7 +10,7 @@ namespace BennorMcCarthy.AutoT4
     [ClassInterface(ClassInterfaceType.None)]
     public class AutoT4ProjectItemSettings : ProjectItemSettings
     {
-        private const BuildEvent DefaultRunOnBuildSetting = BuildEvent.BeforeBuild;
+        private const RunOnBuild DefaultRunOnBuildSetting = RunOnBuild.Default;
 
         public AutoT4ProjectItemSettings(ProjectItem item)
             : base(item, "AutoT4") { }
@@ -19,33 +19,31 @@ namespace BennorMcCarthy.AutoT4
         [DisplayName("Run on build")]
         [Category("AutoT4")]
         [Description("Whether to run this template at build time or not.")]
-        public BuildEvent RunOnBuild
+        [TypeConverter(typeof(EnumDescriptionConverter))]
+        public RunOnBuild RunOnBuild
         {
             get { return Get(DefaultRunOnBuildSetting, CoerceOldRunOnBuildValue); }
             set { Set(value); }
         }
 
         /// <summary>
-        /// Converts the old <see cref="bool"/> <see cref="RunOnBuild"/> property to <see cref="BuildEvent"/>
+        /// Converts the old <see cref="bool"/> <see cref="RunOnBuild"/> property to <see cref="RunOnBuild"/>
         /// </summary>
-        private BuildEvent CoerceOldRunOnBuildValue(string value)
+        private RunOnBuild CoerceOldRunOnBuildValue(string value)
         {
             var newRunOnBuildValue = DefaultRunOnBuildSetting;
             bool previousRunOnBuild;
             if (bool.TryParse(value, out previousRunOnBuild))
-                newRunOnBuildValue = previousRunOnBuild ? BuildEvent.BeforeBuild : BuildEvent.DoNotRun;
+            {
+                newRunOnBuildValue = previousRunOnBuild
+                                         ? RunOnBuild.Default
+                                         : RunOnBuild.Disabled;
+            }
 
-            //coercion was needed, therefore the new value needs to be assigned so that it gets migrated in the settings
+            // Coercion was needed, therefore the new value needs to be assigned so that it gets migrated in the settings
             RunOnBuild = newRunOnBuildValue;
 
             return newRunOnBuildValue;
         }
-    }
-
-    public enum BuildEvent
-    {
-        DoNotRun,
-        BeforeBuild,
-        AfterBuild
     }
 }
