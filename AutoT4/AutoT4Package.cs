@@ -1,19 +1,10 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.ComponentModel.Design;
-using Microsoft.Win32;
+﻿using System.Runtime.InteropServices;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using EnvDTE;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using VSLangProj;
 
 namespace BennorMcCarthy.AutoT4
 {
@@ -21,6 +12,7 @@ namespace BennorMcCarthy.AutoT4
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     [Guid(GuidList.guidAutoT4PkgString)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
+    [ProvideOptionPage(typeof(Options), Options.CategoryName, Options.PageName, 1000, 1001, false)]
     public sealed class AutoT4Package : Package
     {
         private DTE _dte;
@@ -28,6 +20,11 @@ namespace BennorMcCarthy.AutoT4
         private ObjectExtenders _objectExtenders;
         private AutoT4ExtenderProvider _extenderProvider;
         private readonly List<int> _extenderProviderCookies = new List<int>();
+
+        private Options Options
+        {
+            get { return (Options)GetDialogPage(typeof(Options)); }
+        }
 
         protected override void Initialize()
         {
@@ -62,21 +59,21 @@ namespace BennorMcCarthy.AutoT4
             _extenderProviderCookies.Add(_objectExtenders.RegisterExtenderProvider(catId, name, _extenderProvider));
         }
 
-        private void OnBuildBegin(vsBuildScope Scope, vsBuildAction Action)
+        private void OnBuildBegin(vsBuildScope scope, vsBuildAction action)
         {
-            RunTemplates(Scope, BuildEvent.BeforeBuild);
+            RunTemplates(scope, RunOnBuild.BeforeBuild, Options.RunOnBuild == DefaultRunOnBuild.BeforeBuild);
         }
 
-        private void OnBuildDone(vsBuildScope Scope, vsBuildAction Action)
+        private void OnBuildDone(vsBuildScope scope, vsBuildAction action)
         {
-            RunTemplates(Scope, BuildEvent.AfterBuild);
+            RunTemplates(scope, RunOnBuild.AfterBuild, Options.RunOnBuild == DefaultRunOnBuild.AfterBuild);
         }
 
-        private void RunTemplates(vsBuildScope scope, BuildEvent buildEvent)
+        private void RunTemplates(vsBuildScope scope, RunOnBuild buildEvent, bool runIfDefault)
         {
             _dte.GetProjectsWithinBuildScope(scope)
                 .FindT4ProjectItems()
-                .ThatShouldRunOn(buildEvent)
+                .ThatShouldRunOn(buildEvent, runIfDefault)
                 .ToList()
                 .ForEach(item => item.RunTemplate());
         }

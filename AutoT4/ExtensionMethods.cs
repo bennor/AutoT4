@@ -28,14 +28,16 @@ namespace BennorMcCarthy.AutoT4
 
     public static class ProjectItemExtensions
     {
-        public static IEnumerable<ProjectItem> ThatShouldRunOn(this IEnumerable<ProjectItem> projectItems, BuildEvent whenToRun)
+        public static IEnumerable<ProjectItem> ThatShouldRunOn(this IEnumerable<ProjectItem> projectItems, RunOnBuild whenToRun, bool runIfDefault)
         {
-            return projectItems.Where(projectItem => projectItem.ShouldRunOn(whenToRun));
+            return projectItems.Where(projectItem => projectItem.ShouldRunOn(whenToRun, runIfDefault));
         }
 
-        public static bool ShouldRunOn(this ProjectItem projectItem, BuildEvent whenToRun)
+        public static bool ShouldRunOn(this ProjectItem projectItem, RunOnBuild whenToRun, bool runIfDefault)
         {
-            return (new AutoT4ProjectItemSettings(projectItem)).RunOnBuild == whenToRun;
+            var setting = new AutoT4ProjectItemSettings(projectItem).RunOnBuild;
+            return setting == whenToRun ||
+                   (setting == RunOnBuild.Default && runIfDefault);
         }
 
         public static void RunTemplate(this ProjectItem template)

@@ -121,10 +121,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoT4ProjectItemSettings.cs" />
+    <Compile Include="RunOnBuild.cs" />
+    <Compile Include="DefaultRunOnBuild.cs" />
+    <Compile Include="EnumDescriptionConverter.cs" />
     <Compile Include="Guids.cs" />
     <Compile Include="AutoT4ExtenderProvider.cs" />
     <Compile Include="AutoT4Extender.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="Options.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ProjectItemSettings.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>

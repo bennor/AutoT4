@@ -1,4 +1,11 @@
-﻿Version 1.1.0
+﻿Version 1.2.0
+=============
+* Added option to run templates before or after build (or not at all).
+* Added AutoT4 section to options dialog so you can choose when to run at a global level.
+
+Thanks to https://github.com/CosminLazar and https://github.com/malylemire1 for their help on this.
+
+Version 1.1.0
 =============
 * Added ability to exclude templates from automatic build via Properties window
 * Added Visual Studio 2015 support
