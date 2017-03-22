@@ -49,8 +49,10 @@ namespace BennorMcCarthy.AutoT4
             }
             else
             {
-                if (template.IsOpen) template.Save();
-                else template.Open().Close(vsSaveChanges.vsSaveChangesYes);
+                if (template.IsOpen)
+                    template.Save();
+                else
+                    template.Open().Close(vsSaveChanges.vsSaveChangesYes);
             }
         }
     }
