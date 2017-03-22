@@ -31,7 +31,6 @@ namespace BennorMcCarthy.AutoT4
             }
             catch
             {
-                throw new NullReferenceException("finalizer");
             }
         }
     }
