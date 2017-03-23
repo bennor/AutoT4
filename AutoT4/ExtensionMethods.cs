@@ -50,8 +50,15 @@ namespace BennorMcCarthy.AutoT4
             else
             {
                 if (!template.IsOpen)
-                    template.Open();
-                template.Save();
+                {
+                    var window = template.Open();
+                    template.Save();
+                    window.Close();
+                }
+                else
+                {
+                    template.Save();
+                }
             }
         }
     }
