@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="3fe81b73-39c9-4e39-8742-8e3fc01493bd" Version="1.2.1" Language="en-US" Publisher="Bennor McCarthy" />
+    <Identity Id="3fe81b73-39c9-4e39-8742-8e3fc01493bd" Version="1.2.2" Language="en-US" Publisher="Bennor McCarthy" />
     <DisplayName>AutoT4</DisplayName>
     <Description xml:space="preserve">A zero-configuration extension for Visual Studio 2012+ which automatically runs your T4 templates at build time.</Description>
     <MoreInfo>https://github.com/bennor/AutoT4</MoreInfo>
