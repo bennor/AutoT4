@@ -8,6 +8,8 @@ namespace BennorMcCarthy.AutoT4
 {
     public static class DTEExtensions
     {
+        private const string SolutionFolder = "{66A26720-8FB5-11D2-AA7E-00C04F688DDE}";
+
         public static IEnumerable<Project> GetProjectsWithinBuildScope(this DTE dte, vsBuildScope scope)
         {
             IEnumerable<Project> projects = null;
@@ -15,7 +17,7 @@ namespace BennorMcCarthy.AutoT4
             switch (scope)
             {
                 case vsBuildScope.vsBuildScopeSolution:
-                    projects = dte.Solution.Projects.OfType<Project>();
+                    projects = GetProjectsInSolution(dte.Solution).Where(x => x.ProjectItems != null);
                     break;
                 case vsBuildScope.vsBuildScopeProject:
                     projects = ((object[])dte.ActiveSolutionProjects).OfType<Project>();
@@ -23,6 +25,50 @@ namespace BennorMcCarthy.AutoT4
             }
 
             return projects ?? Enumerable.Empty<Project>();
+        }
+
+        private static IEnumerable<Project> GetProjectsInSolution(Solution solution)
+        {
+            foreach (Project project in solution.Projects.OfType<Project>())
+            {
+                if (project.Kind == SolutionFolder)
+                {
+                    foreach (Project folderProject in GetProjectsInSolutionFolder(project).Where(x => x.Kind != SolutionFolder))
+                    {
+                        yield return folderProject;
+                    }
+                }
+                else
+                {
+                    yield return project;
+                }
+            }
+        }
+
+        private static IEnumerable<Project> GetProjectsInSolutionFolder(Project solutionFolderProject)
+        {
+            if (solutionFolderProject.ProjectItems != null)
+            {
+                foreach (ProjectItem projectItem in solutionFolderProject.ProjectItems)
+                {
+                    Project subProject = projectItem.SubProject as Project;
+
+                    if (subProject != null)
+                    {
+                        if (subProject.Kind == SolutionFolder)
+                        {
+                            foreach (Project folderProject in GetProjectsInSolutionFolder(subProject).Where(x => x.Kind != SolutionFolder))
+                            {
+                                yield return folderProject;
+                            }
+                        }
+                        else
+                        {
+                            yield return subProject;
+                        }
+                    }
+                }
+            }
         }
     }
 
