@@ -13,4 +13,4 @@ By default, the extension will run all of your T4 templates on build. If that's 
 If you want to customize the behaviour, you have two options:
 
 * Change the default behaviour from the _AutoT4_ section of the Visual Studio options dialog.
-* Override the default behaviour for a specific template by changing the **Run on build** setting in the _Properties window_ for any `.tt` file in your solution. Whatever you specify here will take precedence over the default in the options dialog (unless you select "Default").
+* Override the default behaviour for a specific template by changing the **Run on build** setting in the _Properties window_ for any `.tt` file in your solution. Whatever you specify here will take precedence over the default in the options dialog (unless you select "Default"). _Note: this option is not available for T4 templates in a new NET Core or NET Standard project._
