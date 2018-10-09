@@ -5,6 +5,8 @@ using Microsoft.VisualStudio.Shell;
 using EnvDTE;
 using System.Linq;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System;
 
 namespace BennorMcCarthy.AutoT4
 {
@@ -13,8 +15,12 @@ namespace BennorMcCarthy.AutoT4
     [Guid(GuidList.guidAutoT4PkgString)]
     [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
     [ProvideOptionPage(typeof(Options), Options.CategoryName, Options.PageName, 1000, 1001, false)]
+    [ProvideMenuResource("Menus.ctmenu", 1)]
     public sealed class AutoT4Package : Package
     {
+        private const int CommandId = 0x0100;
+        private static readonly Guid CommandSet = new Guid("92c31ba2-5827-4779-b3ff-cf0fed43e50a");
+
         private DTE _dte;
         private BuildEvents _buildEvents;
         private ObjectExtenders _objectExtenders;
@@ -38,6 +44,11 @@ namespace BennorMcCarthy.AutoT4
             RegisterExtenderProvider(VSConstants.CATID.VBFileProperties_string);
 
             RegisterEvents();
+
+            var commandService = (IMenuCommandService)GetService(typeof(IMenuCommandService));
+            var menuCommandID = new CommandID(CommandSet, CommandId);
+            var menuItem = new MenuCommand(this.RunTemplates, menuCommandID);
+            commandService.AddCommand(menuItem);
         }
 
         private void RegisterEvents()
@@ -74,6 +85,14 @@ namespace BennorMcCarthy.AutoT4
             _dte.GetProjectsWithinBuildScope(scope)
                 .FindT4ProjectItems()
                 .ThatShouldRunOn(buildEvent, runIfDefault)
+                .ToList()
+                .ForEach(item => item.RunTemplate());
+        }
+
+        private void RunTemplates(object sender, EventArgs e)
+        {
+            _dte.GetProjectsWithinBuildScope(vsBuildScope.vsBuildScopeSolution)
+                .FindT4ProjectItems()
                 .ToList()
                 .ForEach(item => item.RunTemplate());
         }
